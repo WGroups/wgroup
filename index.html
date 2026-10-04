@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#3a1153">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="W Group">
+<title>W Group</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script src="config.js"></script>
+<style>
+  :root{ --deep:#2c0d40; --plum:#3a1153; --purple:#7a2497; --gold:#d99b2b; --ink:#241032; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; background:var(--deep); color:#fff;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; overflow:hidden; }
+  /* the business app fills the screen; safe-area padding keeps it clear of the notch and home bar */
+  #wrap{ position:fixed; inset:0; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background:var(--deep); }
+  #app{ width:100%; height:100%; border:0; display:block; background:#faf7fc; }
+  /* splash */
+  .screen{ position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+    padding:24px; text-align:center; background:linear-gradient(160deg,var(--purple) 0%,var(--deep) 70%); transition:opacity .35s ease; }
+  .screen.hide{ opacity:0; pointer-events:none; }
+  .logo{ width:min(230px,60vw); height:auto; filter:drop-shadow(0 6px 18px rgba(0,0,0,.35)); }
+  .bar{ width:56px; height:3px; border-radius:3px; background:var(--gold); }
+  h1{ margin:0; font-size:20px; letter-spacing:3px; font-weight:800; }
+  .sub{ margin:0; font-size:11px; letter-spacing:2.5px; opacity:.75; }
+  .spin{ width:30px; height:30px; border-radius:50%; border:3px solid rgba(255,255,255,.22); border-top-color:var(--gold); animation:sp 0.9s linear infinite; }
+  @keyframes sp{ to{ transform:rotate(360deg); } }
+  .hint{ font-size:12.5px; opacity:.85; max-width:340px; line-height:1.5; }
+  .hint a, .card a{ color:#ffd98a; }
+  .btn{ appearance:none; border:0; border-radius:999px; padding:11px 22px; font-weight:700; font-size:14px; cursor:pointer;
+    background:var(--gold); color:var(--ink); }
+  .btn.ghost{ background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.55); }
+  .card{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:16px; padding:18px 20px; max-width:420px; text-align:left;
+    font-size:13.5px; line-height:1.6; }
+  .card code{ background:rgba(0,0,0,.3); padding:1px 6px; border-radius:5px; word-break:break-all; }
+  /* install banner */
+  #install{ position:fixed; z-index:6; left:50%; transform:translateX(-50%); bottom:calc(18px + env(safe-area-inset-bottom));
+    display:none; align-items:center; gap:10px; background:#fff; color:var(--ink); border-radius:14px; padding:10px 12px 10px 14px;
+    box-shadow:0 12px 34px rgba(20,4,30,.4); font-size:13px; width:min(440px,calc(100vw - 24px)); }
+  #install img{ width:34px; height:34px; border-radius:9px; }
+  #install b{ display:block; }
+  #install .x{ margin-left:auto; background:none; border:0; font-size:18px; color:#8a7b98; cursor:pointer; padding:4px 6px; }
+  #install .go{ padding:8px 14px; font-size:13px; }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+<div id="wrap"><iframe id="app" title="W Group Business Management Suite"
+  allow="clipboard-read; clipboard-write; camera; microphone; geolocation; fullscreen"
+  referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+
+<!-- loading screen -->
+<div class="screen" id="splash">
+  <img class="logo" src="icons/logo-white.png" alt="W Group">
+  <div class="bar"></div>
+  <div><h1>W GROUP</h1><p class="sub">BUSINESS MANAGEMENT SUITE</p></div>
+  <div class="spin" id="spin"></div>
+  <p class="hint" id="slow" hidden>Taking longer than usual… <a id="direct" href="#" target="_blank" rel="noopener">open it directly</a></p>
+</div>
+
+<!-- shown only until the link is filled in config.js -->
+<div class="screen" id="setup" hidden>
+  <img class="logo" src="icons/logo-white.png" alt="W Group">
+  <div class="card">
+    <b>One step left (admin):</b><br>
+    Open <code>config.js</code> and paste your Apps Script web-app link (it ends in <code>/exec</code>) between the quotes:<br>
+    <code>window.WG_APP_URL = 'https://script.google.com/macros/s/…/exec';</code><br>
+    Save, wait a minute, then refresh this page.
+  </div>
+</div>
+
+<!-- offline -->
+<div class="screen" id="offline" hidden>
+  <img class="logo" src="icons/logo-white.png" alt="W Group">
+  <div class="card" style="text-align:center"><b>You're offline</b><br>W Group needs the internet to reach your data. It reconnects by itself — or tap retry.</div>
+  <button class="btn" onclick="boot(true)">↻ Retry</button>
+</div>
+
+<!-- install prompt -->
+<div id="install">
+  <img src="icons/icon-192.png" alt="">
+  <div><b>Install W Group</b><span id="instTxt">Open it like an app — full screen, from your home screen.</span></div>
+  <button class="btn go" id="instGo">Install</button>
+  <button class="x" onclick="instClose()" aria-label="Close">✕</button>
+</div>
+
+<script>
+(function(){
+  var URL_OK=/^https:\/\/script\.google\.com\/(a\/[^\/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/(exec|dev)(\?.*)?$/;
+  var appUrl=String(window.WG_APP_URL||'').trim();
+  var frame=document.getElementById('app'), splash=document.getElementById('splash');
+  var loaded=false, slowT=null;
+  function show(id,on){ document.getElementById(id).hidden=!on; }
+  function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
+
+  window.boot=function(force){
+    if(!URL_OK.test(appUrl)){ show('setup',true); splash.classList.add('hide'); return; }
+    if(!navigator.onLine){ show('offline',true); return; }
+    show('offline',false);
+    document.getElementById('direct').href=appUrl;
+    if(force || !frame.getAttribute('src')){
+      loaded=false; splash.classList.remove('hide'); show('slow',false);
+      frame.src=appUrl;
+      clearTimeout(slowT);
+      slowT=setTimeout(function(){ if(!loaded) show('slow',true); }, 12000);
+    }
+  };
+  frame.addEventListener('load',function(){
+    if(!frame.getAttribute('src')) return;
+    loaded=true; clearTimeout(slowT);
+    setTimeout(function(){ splash.classList.add('hide'); }, 350);
+  });
+  window.addEventListener('offline',function(){ show('offline',true); });
+  window.addEventListener('online',function(){ boot(!loaded); });
+
+  /* ---- install: Android / desktop Chrome & Edge use the browser prompt; iPhone gets instructions ---- */
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  var deferred=null, bar=document.getElementById('install');
+  window.instClose=function(){ bar.style.display='none'; store('wg_inst_x', String(Date.now())); };
+  function snoozed(){ var t=Number(store('wg_inst_x')||0); return t && (Date.now()-t) < 7*24*3600*1000; }
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault(); deferred=e;
+    if(!standalone && !snoozed()) bar.style.display='flex';
+  });
+  document.getElementById('instGo').addEventListener('click',function(){
+    if(deferred){ deferred.prompt(); deferred.userChoice.finally(function(){ deferred=null; bar.style.display='none'; }); }
+    else bar.style.display='none';
+  });
+  window.addEventListener('appinstalled',function(){ bar.style.display='none'; });
+  if(isIOS && !standalone && !snoozed()){
+    document.getElementById('instTxt').innerHTML='In Safari tap <b>Share ⬆</b> then <b>Add to Home Screen</b>.';
+    document.getElementById('instGo').hidden=true;
+    setTimeout(function(){ bar.style.display='flex'; }, 2500);
+  }
+
+  if('serviceWorker' in navigator && location.protocol==='https:'){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
